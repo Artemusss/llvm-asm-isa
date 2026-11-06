@@ -1,0 +1,36 @@
+; ============================================================================
+;  app.myasm — логический модуль app() графического приложения на МОЕЙ ISA.
+;  Эквивалент app.c (задания 1/3):
+;    for step in 0..1000:
+;      for y in 0..SIM_Y_SIZE:
+;        for x in 0..SIM_X_SIZE:
+;          simPutPixel(x, y, 0xFF000000 + x*y*step)
+;        (inner)
+;      simFlush()
+;
+;  Регистры:  r1=step  r2=y  r3=y*step  r4=flag  r5=x  r6=color
+;  Описание инструкций — в ISA.md.
+; ============================================================================
+
+entry
+    LDI  r1 0              ; step = 0
+loop_step
+    LDI  r2 0              ; y = 0
+loop_y
+    LDI  r5 0              ; x = 0
+    MUL  r3 r2 r1          ; r3 = y * step
+loop_x
+    MUL  r6 r3 r5          ; r6 = (y*step) * x
+    ADDI r6 r6 -16777216   ; r6 += 0xFF000000  -> ARGB-цвет (альфа = 0xFF)
+    PIXEL r5 r2 r6         ; simPutPixel(x, y, color)
+    INEQ r4 r5 1536        ; x++;  r4 = (x != SIM_X_SIZE)
+    BRNZ r4 loop_x         ; пока x != 1536 — рисуем строку
+inc_y
+    INEQ r4 r2 768         ; y++;  r4 = (y != SIM_Y_SIZE)
+    BRNZ r4 loop_y         ; пока y != 768 — следующая строка
+inc_step
+    FLUSH                  ; показать кадр
+    INEQ r4 r1 1000        ; step++; r4 = (step != 1000)
+    BRNZ r4 loop_step      ; пока step != 1000 — следующий кадр
+done
+    HALT
